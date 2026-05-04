@@ -1,0 +1,650 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>所有记录 - 文字墙</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9eff7 0%, #dce3ec 100%);
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 30px 20px 60px;
+            min-height: 100vh;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.02);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .title-section h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e2f5e, #2a4b8c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .title-section p {
+            color: #4b5568;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+        .stats-badge {
+            background: #1e293b;
+            color: white;
+            padding: 10px 22px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats-badge span:first-child {
+            opacity: 0.8;
+            font-weight: normal;
+        }
+        .stats-badge .count-number {
+            font-size: 1.7rem;
+            font-weight: 800;
+            margin-left: 4px;
+            color: #ffd966;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            color: #1f3a6b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #cbd5e1;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #2a5298;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 8px rgba(42,82,152,0.2);
+        }
+        .btn-primary:hover {
+            background: #1e3c72;
+            transform: translateY(-2px);
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+        }
+        .btn-danger-light {
+            background: #fff5f5;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+        .btn-danger-light:hover {
+            background: #fee2e2;
+        }
+
+        /* 工具栏 (过滤/排序) */
+        .toolbar {
+            background: white;
+            border-radius: 60px;
+            padding: 12px 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #e2edff;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 40px;
+            padding: 5px 16px;
+            border: 1px solid #e2e8f0;
+            flex: 2;
+            min-width: 180px;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            padding: 10px 8px;
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+        }
+        .search-box span {
+            color: #7c8ba0;
+        }
+        .sort-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .sort-btn {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            padding: 6px 16px;
+            border-radius: 32px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #334155;
+        }
+        .sort-btn.active {
+            background: #2a5298;
+            border-color: #2a5298;
+            color: white;
+        }
+        .sort-btn:hover:not(.active) {
+            background: #eef2ff;
+        }
+
+        /* 卡片网格布局 */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 8px;
+        }
+
+        .record-card {
+            background: white;
+            border-radius: 28px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 15px -6px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .record-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 30px -12px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            padding: 16px 20px 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f0f2f5;
+            background: #fefefe;
+        }
+        .timestamp {
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: #5b6e8c;
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 40px;
+        }
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 30px;
+            width: 30px;
+            transition: 0.1s;
+            color: #6c757d;
+        }
+        .icon-btn:hover {
+            background: #f1f5f9;
+        }
+        .delete-btn:hover {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+        .card-content {
+            padding: 20px;
+            flex: 1;
+            word-break: break-word;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            color: #0f172a;
+            font-size: 0.95rem;
+            min-height: 130px;
+            background: #ffffff;
+        }
+        .card-footer {
+            padding: 12px 20px 18px;
+            border-top: 1px solid #f0f2f5;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .copy-id {
+            font-family: monospace;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 70px 30px;
+            background: white;
+            border-radius: 48px;
+            color: #5b6e8c;
+            margin-top: 20px;
+        }
+        .empty-state h3 {
+            font-size: 1.8rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+        .toast-msg {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        @media (max-width: 680px) {
+            body {
+                padding: 20px 16px 50px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .toolbar {
+                border-radius: 32px;
+            }
+            .toast-msg {
+                white-space: normal;
+                text-align: center;
+                max-width: 85vw;
+            }
+        }
+        footer {
+            margin-top: 48px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #5a6e8a;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="title-section">
+            <h1>📖 全部文字记录</h1>
+            <p>所有保存的内容 · 永久存在你的浏览器中</p>
+        </div>
+        <div class="stats-badge">
+            <span>📚 总计</span>
+            <span class="count-number" id="totalCountDisplay">0</span>
+            <span>条笔记</span>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" id="refreshViewBtn">🔄 刷新</button>
+            <button class="btn btn-outline" id="gotoIndexBtn">✍️ 新建记录</button>
+            <button class="btn btn-danger-light" id="clearAllFromViewBtn">🗑️ 清空全部</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索文字内容...">
+        </div>
+        <div class="sort-buttons">
+            <button class="sort-btn active" data-sort="newest">🕒 最新优先</button>
+            <button class="sort-btn" data-sort="oldest">⏳ 最早优先</button>
+        </div>
+    </div>
+
+    <!-- 记录卡片网格 -->
+    <div id="recordsContainer" class="records-grid">
+        <div class="empty-state">
+            <h3>✨ 暂无记录</h3>
+            <p>前往 <strong>index.html</strong> 写下第一条文字记录吧~</p>
+            <button id="emptyStateCreateBtn" style="margin-top: 20px;" class="btn btn-primary">➕ 创建新记录</button>
+        </div>
+    </div>
+    <footer>
+        数据存储于 localStorage · 可随意增删 · 与 index.html 实时同步
+    </footer>
+</div>
+<div id="toastMsg" class="toast-msg"></div>
+
+<script>
+    // 存储KEY必须一致
+    const STORAGE_KEY = 'text_records_app';
+    
+    // 当前排序状态
+    let currentSort = 'newest'; // 'newest' or 'oldest'
+    let currentSearchTerm = '';
+    
+    // 辅助: 显示toast
+    function showToast(message, duration = 2000) {
+        const toast = document.getElementById('toastMsg');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, duration);
+    }
+    
+    // 获取原始记录 (未排序/未过滤)
+    function getRawRecords() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        try {
+            let records = JSON.parse(raw);
+            if (!Array.isArray(records)) return [];
+            records = records.filter(r => r && typeof r.text === 'string' && r.id && r.timestamp);
+            return records;
+        } catch(e) {
+            console.warn(e);
+            return [];
+        }
+    }
+    
+    // 根据排序和过滤返回最终记录
+    function getFilteredAndSortedRecords() {
+        let records = getRawRecords();
+        // 先过滤搜索词
+        if (currentSearchTerm.trim() !== '') {
+            const lowerSearch = currentSearchTerm.trim().toLowerCase();
+            records = records.filter(rec => rec.text.toLowerCase().includes(lowerSearch));
+        }
+        // 排序
+        if (currentSort === 'newest') {
+            records.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+        } else {
+            records.sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
+        }
+        return records;
+    }
+    
+    // 格式化时间显示: 完整日期时间
+    function formatDate(timestamp, dateStrFallback) {
+        if (dateStrFallback && typeof dateStrFallback === 'string') return dateStrFallback;
+        if (!timestamp) return '未知时间';
+        const date = new Date(timestamp);
+        return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}:${date.getSeconds().toString().padStart(2,'0')}`;
+    }
+    
+    // 渲染卡片
+    function renderRecords() {
+        const container = document.getElementById('recordsContainer');
+        const totalSpan = document.getElementById('totalCountDisplay');
+        if (!container) return;
+        
+        const records = getFilteredAndSortedRecords();
+        const totalCount = getRawRecords().length;  // 总原始条数（不经过滤）
+        if (totalSpan) totalSpan.innerText = totalCount;
+        
+        if (!records.length) {
+            let emptyHtml = `<div class="empty-state">
+                <h3>📭 没有找到记录</h3>`;
+            if (currentSearchTerm.trim() !== '') {
+                emptyHtml += `<p>没有匹配 “${escapeHtml(currentSearchTerm)}” 的内容，试试其他关键词~</p>`;
+            } else {
+                emptyHtml += `<p>还没有任何文字记录，去 index.html 添加第一条吧 ✨</p>`;
+            }
+            emptyHtml += `<button id="emptyStateCreateBtn" style="margin-top: 20px;" class="btn btn-primary">➕ 创建新记录</button></div>`;
+            container.innerHTML = emptyHtml;
+            const emptyBtn = document.getElementById('emptyStateCreateBtn');
+            if (emptyBtn) emptyBtn.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+            return;
+        }
+        
+        // 生成卡片HTML
+        const cardsHtml = records.map(record => {
+            const displayDate = formatDate(record.timestamp, record.dateStr);
+            const shortId = String(record.id).slice(-8);
+            return `
+                <div class="record-card" data-record-id="${record.id}">
+                    <div class="card-header">
+                        <div class="timestamp">📅 ${displayDate}</div>
+                        <div class="card-actions">
+                            <button class="icon-btn copy-id-btn" title="复制ID" data-id="${record.id}">🔗</button>
+                            <button class="icon-btn delete-btn" title="删除本条" data-id="${record.id}">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="card-content">${escapeHtml(record.text)}</div>
+                    <div class="card-footer">
+                        <span>🆔 #${shortId}</span>
+                        <span class="copy-id" data-id="${record.id}" style="cursor:pointer;">📋 复制全文</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = cardsHtml;
+        
+        // 绑定所有删除按钮事件
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                if (id) deleteRecordById(id);
+            });
+        });
+        // 复制ID按钮
+        document.querySelectorAll('.copy-id-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                if (id) copyToClipboard(id, '记录ID已复制');
+            });
+        });
+        // 复制全文
+        document.querySelectorAll('.copy-id').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = el.getAttribute('data-id');
+                if (id) {
+                    const record = getRawRecords().find(r => r.id == id);
+                    if (record && record.text) {
+                        copyToClipboard(record.text, '全文已复制到剪贴板');
+                    } else {
+                        showToast('未找到记录文本', 1200);
+                    }
+                }
+            });
+        });
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, c => c);
+    }
+    
+    // 删除单条记录
+    function deleteRecordById(id) {
+        if (!id) return;
+        let records = getRawRecords();
+        const newRecords = records.filter(r => r.id != id);
+        if (newRecords.length === records.length) {
+            showToast('记录不存在或已删除', 1000);
+            return;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
+        // 重新渲染
+        renderRecords();
+        // 同时更新总数显示（getRawRecords重新调用已更新）
+        const totalSpan = document.getElementById('totalCountDisplay');
+        if (totalSpan) totalSpan.innerText = newRecords.length;
+        showToast('✅ 已删除一条记录', 1200);
+        // 触发storage事件以便同源其他页面(index)同步显示
+        window.dispatchEvent(new Event('storage'));
+    }
+    
+    // 清空全部(二次确认)
+    function clearAllRecords() {
+        if (confirm('⚠️ 永久删除所有文字记录，不可恢复！确定要清空吗？')) {
+            localStorage.removeItem(STORAGE_KEY);
+            renderRecords();
+            showToast('🗑️ 所有记录已清空', 1600);
+            window.dispatchEvent(new Event('storage'));
+        }
+    }
+    
+    // 复制文本
+    function copyToClipboard(text, successMsg = '已复制') {
+        if (!text) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`📋 ${successMsg}`, 1300);
+            }).catch(() => {
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    }
+    
+    function fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('📋 已复制到剪贴板', 1200);
+    }
+    
+    // 刷新UI & 同步数据 (重新拉取)
+    function refreshView() {
+        renderRecords();
+        showToast('🔄 已同步最新记录', 1000);
+    }
+    
+    // 监听其他页面(localStorage变更)自动刷新数据
+    function bindStorageSync() {
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY) {
+                // 当 index.html 或其他标签修改数据时，自动刷新
+                renderRecords();
+                showToast('📡 检测到外部更新，已刷新', 1200);
+            }
+        });
+        // 额外监听自定义事件（同页面内dispatch）
+        window.addEventListener('storage', () => {});
+    }
+    
+    // 初始化页面和交互
+    function initViewPage() {
+        renderRecords();
+        bindStorageSync();
+        
+        // 搜索框事件
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                currentSearchTerm = e.target.value;
+                renderRecords();
+            });
+        }
+        
+        // 排序按钮
+        const sortBtns = document.querySelectorAll('.sort-btn');
+        sortBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sortVal = btn.getAttribute('data-sort');
+                if (sortVal === 'newest') {
+                    currentSort = 'newest';
+                } else if (sortVal === 'oldest') {
+                    currentSort = 'oldest';
+                }
+                // 更新UI激活样式
+                sortBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderRecords();
+            });
+        });
+        
+        // 刷新按钮
+        const refreshBtn = document.getElementById('refreshViewBtn');
+        if (refreshBtn) refreshBtn.addEventListener('click', refreshView);
+        
+        // 跳转新建页面
+        const gotoIndexBtn = document.getElementById('gotoIndexBtn');
+        if (gotoIndexBtn) gotoIndexBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+        
+        // 清空全部（从view页面）
+        const clearAllViewBtn = document.getElementById('clearAllFromViewBtn');
+        if (clearAllViewBtn) clearAllViewBtn.addEventListener('click', clearAllRecords);
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initViewPage);
+    } else {
+        initViewPage();
+    }
+</script>
+</body>
+</html>

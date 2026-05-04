@@ -1,12 +1,460 @@
-﻿<html>
-
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-<title>欢迎页面</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>文字记录工具 - 上传与查看</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 24px 28px;
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.9rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            margin: 8px 0 0;
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+        .content {
+            padding: 28px 28px 36px;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 10px;
+            color: #1e293b;
+            font-size: 0.95rem;
+        }
+        textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: vertical;
+            transition: 0.2s;
+            background: #fefefe;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42,82,152,0.2);
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 10px;
+            margin-bottom: 28px;
+        }
+        .btn {
+            border: none;
+            background: #eef2ff;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1e293b;
+        }
+        .btn-primary {
+            background: #2a5298;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-primary:hover {
+            background: #1e3c72;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            background: #fff1f0;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+        .btn-danger:hover {
+            background: #fee2e2;
+        }
+        .info-panel {
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 18px 20px;
+            margin-top: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .info-title {
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+            color: #0f172a;
+        }
+        .badge {
+            background: #e0e7ff;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #1e3c72;
+        }
+        .record-list {
+            max-height: 280px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .record-item {
+            background: white;
+            border-radius: 18px;
+            padding: 14px 16px;
+            border-left: 5px solid #2a5298;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            transition: all 0.1s;
+            word-break: break-word;
+        }
+        .record-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+            color: #64748b;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .record-date {
+            font-family: monospace;
+            font-size: 0.7rem;
+        }
+        .record-text {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #0f172a;
+            white-space: pre-wrap;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 28px 12px;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .toast-msg {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 10px 22px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        footer {
+            border-top: 1px solid #eef2ff;
+            background: #f9fbfd;
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 16px;
+            color: #5b6e8c;
+        }
+        @media (max-width: 550px) {
+            .content {
+                padding: 20px;
+            }
+            .btn {
+                padding: 10px 18px;
+            }
+            .toast-msg {
+                white-space: normal;
+                text-align: center;
+                max-width: 80vw;
+            }
+        }
+    </style>
 </head>
-
 <body>
-<p> hello. </p>
-<p> Welcome to my website </p>
-</body>
+<div class="card">
+    <div class="header">
+        <h1>📝 文字记录本</h1>
+        <p>记录重要想法、清单或笔记 · 自动保存至本地存储</p>
+    </div>
+    <div class="content">
+        <div class="form-group">
+            <label>✍️ 写下你的记录</label>
+            <textarea id="recordInput" rows="4" placeholder="例如：明天下午3点开会&#10;学习JavaScript笔记&#10;购物清单：牛奶、鸡蛋..."></textarea>
+        </div>
 
+        <div class="button-group">
+            <button class="btn btn-primary" id="saveBtn">💾 保存记录</button>
+            <button class="btn btn-secondary" id="clearInputBtn">🗑️ 清空输入框</button>
+            <button class="btn btn-danger" id="clearAllBtn">⚠️ 清空所有记录</button>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-title">
+                <span>📋 最新记录预览 (最近5条)</span>
+                <span class="badge" id="totalCountBadge">0条记录</span>
+            </div>
+            <div id="previewList" class="record-list">
+                <div class="empty-message">暂无记录，写点什么然后点击保存吧 ✨</div>
+            </div>
+            <div style="margin-top: 16px; text-align: right;">
+                <a href="view.html" target="_blank" style="color:#2a5298; text-decoration: none; font-size:0.85rem; font-weight:500;">📖 前往完整记录墙 →</a>
+            </div>
+        </div>
+        <p style="font-size:0.7rem; color:#7c8ba0; margin-top: 18px; text-align:center;">
+            💡 提示：所有记录保存在浏览器中（localStorage），不会丢失。<br>
+            可点击上方按钮查看全部历史记录 <strong>view.html</strong>
+        </p>
+    </div>
+    <footer>
+        静态工具 · 纯前端实现 · 数据私有
+    </footer>
+</div>
+<div id="toastMsg" class="toast-msg"></div>
+
+<script>
+    // ---------- 存储 KEY ----------
+    const STORAGE_KEY = 'text_records_app';
+
+    // ---------- 全局辅助函数 ----------
+    function showToast(message, duration = 2000) {
+        const toast = document.getElementById('toastMsg');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, duration);
+    }
+
+    // 获取所有记录 (按时间降序，最新的在前面)
+    function getAllRecords() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        try {
+            let records = JSON.parse(raw);
+            if (!Array.isArray(records)) return [];
+            // 保证每条有 id, text, timestamp
+            records = records.filter(r => r && typeof r.text === 'string' && r.id && r.timestamp);
+            // 按时间戳倒序 (最新在前)
+            records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            return records;
+        } catch(e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    // 保存记录数组
+    function saveAllRecords(records) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        // 更新所有UI (预览 + 计数)
+        updatePreviewAndCounter();
+        // 如果当前页面是view.html (但本脚本仅在index.html使用, view独立, 但为了同步可触发storage事件)
+        // 触发一个自定义事件，同源下其他页面如果监听storage会自动更新，view.html里面我们实现了监听。
+        window.dispatchEvent(new Event('storage'));
+    }
+
+    // 添加新记录
+    function addRecord(text) {
+        if (!text || text.trim() === '') {
+            showToast('❌ 记录内容不能为空', 1500);
+            return false;
+        }
+        const trimmedText = text.trim();
+        const newRecord = {
+            id: Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+            text: trimmedText,
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleString()
+        };
+        const currentRecords = getAllRecords();
+        // 新记录插入到最前面 (最新)
+        currentRecords.unshift(newRecord);
+        saveAllRecords(currentRecords);
+        showToast('✅ 记录已保存', 1200);
+        return true;
+    }
+
+    // 清空所有记录
+    function clearAllRecords() {
+        if (confirm('⚠️ 确定要删除全部记录吗？此操作不可撤销。')) {
+            localStorage.removeItem(STORAGE_KEY);
+            updatePreviewAndCounter();
+            showToast('🗑️ 所有记录已清空', 1500);
+        }
+    }
+
+    // 渲染预览区域 (展示最近5条记录)
+    function renderPreviewList(records) {
+        const container = document.getElementById('previewList');
+        if (!container) return;
+        
+        if (!records || records.length === 0) {
+            container.innerHTML = `<div class="empty-message">✨ 暂无记录，快写下第一条文字吧 ✨</div>`;
+            return;
+        }
+        
+        const previewRecords = records.slice(0, 5); // 最近5条（已经按最新在前排序）
+        const itemsHtml = previewRecords.map(record => {
+            const displayDate = record.dateStr || new Date(record.timestamp).toLocaleString();
+            // 限制预览文本过长显示省略号（但保留原始内容）
+            let shortText = record.text.length > 120 ? record.text.substring(0, 120) + '…' : record.text;
+            return `
+                <div class="record-item" data-id="${record.id}">
+                    <div class="record-meta">
+                        <span>📅 ${displayDate}</span>
+                        <span style="font-size:0.65rem;">#ID: ${String(record.id).slice(-6)}</span>
+                    </div>
+                    <div class="record-text">${escapeHtml(shortText)}</div>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = itemsHtml;
+    }
+
+    // 简单的防XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // 更新计数badge + 预览区域
+    function updatePreviewAndCounter() {
+        const records = getAllRecords();
+        const badge = document.getElementById('totalCountBadge');
+        if (badge) {
+            const count = records.length;
+            badge.textContent = `${count}条记录`;
+        }
+        renderPreviewList(records);
+    }
+
+    // 初始化页面和事件绑定
+    function initIndexPage() {
+        // 初始渲染
+        updatePreviewAndCounter();
+        
+        const saveBtn = document.getElementById('saveBtn');
+        const clearInputBtn = document.getElementById('clearInputBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const textarea = document.getElementById('recordInput');
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                const rawText = textarea ? textarea.value : '';
+                if (addRecord(rawText)) {
+                    // 保存成功后清空输入框，便于连续输入
+                    if (textarea) textarea.value = '';
+                    // 可选：聚焦输入框
+                    textarea.focus();
+                }
+            });
+        }
+        
+        if (clearInputBtn) {
+            clearInputBtn.addEventListener('click', () => {
+                if (textarea) {
+                    textarea.value = '';
+                    showToast('🧹 输入框已清空', 800);
+                    textarea.focus();
+                }
+            });
+        }
+        
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', () => {
+                clearAllRecords();
+            });
+        }
+        
+        // 快捷键 Ctrl+Enter 保存 (Cmd+Enter for Mac)
+        if (textarea) {
+            textarea.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (saveBtn) saveBtn.click();
+                }
+            });
+        }
+        
+        // 监听其他页面存储变化 (比如view.html修改了数据? view.html只读设计，但为了多tab实时同步)
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY) {
+                updatePreviewAndCounter();
+                showToast('🔄 检测到记录更新', 1000);
+            }
+        });
+    }
+    
+    // 页面启动
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initIndexPage);
+    } else {
+        initIndexPage();
+    }
+</script>
+</body>
 </html>
