@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>文字记录本 · 轻灵笔记</title>
+    <title>文字记录本 · 灵境笔记</title>
     <style>
         * {
             margin: 0;
@@ -313,6 +313,25 @@
             white-space: nowrap;
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
+        /* 跳转查看全部按钮 */
+        .view-all-link {
+            background: #f1f5f9;
+            color: #2c6e9e;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #dce5f2;
+        }
+        .view-all-link:hover {
+            background: #e6edf6;
+            transform: translateY(-1px);
+        }
         @media (max-width: 640px) {
             body { padding: 1rem; }
             .card-header { padding: 1.2rem 1.2rem 1rem; flex-direction: column; align-items: flex-start; }
@@ -320,6 +339,7 @@
             .entry-link { padding: 0.75rem 1rem; gap: 10px; }
             .light-time { font-size: 0.65rem; white-space: nowrap; }
             .title-text { font-size: 0.94rem; }
+            .toast-msg { white-space: normal; text-align: center; width: auto; max-width: 85vw; }
         }
     </style>
 </head>
@@ -330,8 +350,11 @@
             <div class="title-section">
                 <h1>✨ 简单信息储存 · 灵境笔记</h1>
             </div>
-            <div class="new-record-btn" id="openModalBtn">
-                <span>✚</span> 新建记录
+            <div style="display: flex; gap: 12px;">
+                <a href="javascript:void(0)" id="viewAllLinkBtn" class="view-all-link">📚 查看全部卡片墙</a>
+                <div class="new-record-btn" id="openModalBtn">
+                    <span>✚</span> 新建记录
+                </div>
             </div>
         </div>
 
@@ -353,7 +376,7 @@
         </div>
     </div>
     <div class="footer-note">
-        专注阅读 | 数据储存在浏览器中，永久留存
+        专注阅读 | 数据储存在浏览器中，与卡片墙实时同步
     </div>
 </div>
 
@@ -400,8 +423,8 @@
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // ---------- 存储KEY与全局数据结构 ----------
-    const STORAGE_KEY = 'text_records_app_enhanced';
+    // ---------- 存储KEY与全局数据结构 (与view.html保持一致)----------
+    const STORAGE_KEY = 'text_records_app';   // 统一key，确保index和view完全互通
     
     // 辅助函数：显示toast消息
     function showToast(message, duration = 2000) {
@@ -434,8 +457,8 @@
     function saveAllRecords(records) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
         renderHomeList();          // 刷新主界面
-        // 触发storage事件 (同源其他标签页可同步)
-        window.dispatchEvent(new Event('storage'));
+        // 手动触发storage事件，同源其他标签页同步(view.html会监听)
+        window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: JSON.stringify(records) }));
     }
 
     // 添加或更新记录 (若id存在则更新，否则新增)
@@ -500,8 +523,19 @@
         if (clean.length <= 55) return clean;
         return clean.substring(0, 52) + '...';
     }
+    
+    // 辅助escapeHtml
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, c => c);
+    }
 
-    // 渲染主界面列表（类似 index.asp 风格）
+    // 渲染主界面列表
     function renderHomeList() {
         const container = document.getElementById('entriesList');
         const totalSpan = document.getElementById('totalNumber');
@@ -528,7 +562,6 @@
         records.forEach(record => {
             const displayTitle = smartTitle(record.text);
             const formattedTime = record.dateStr || new Date(record.timestamp).toLocaleString('zh-CN');
-            const shortIdShort = String(record.id).slice(-6);
             html += `
                 <div class="title-item" data-id="${record.id}">
                     <div class="entry-link" data-id="${record.id}">
@@ -551,7 +584,7 @@
         });
     }
     
-    // 显示详情模态框 (类似 view 页)
+    // 显示详情模态框 (完整内容)
     function showDetailById(id) {
         const records = getAllRecords();
         const record = records.find(r => r.id == id);
@@ -576,7 +609,7 @@
         if (modal) modal.style.display = 'none';
     }
     
-    // 打开新建/编辑模态框 (edit模式时传入record)
+    // 打开新建/编辑模态框
     let currentEditId = null;
     function openModal(record = null) {
         const modal = document.getElementById('recordModal');
@@ -584,7 +617,6 @@
         const modalTitle = document.getElementById('modalTitle');
         if (!modal) return;
         if (record) {
-            // 编辑模式
             currentEditId = record.id;
             modalTitle.innerText = '✏️ 编辑记录';
             textarea.value = record.text;
@@ -645,24 +677,14 @@
         }
     }
     
-    // 清空全部记录 (参考原delete风格但加确认)
+    // 清空全部记录
     function clearAllRecords() {
         if (confirm('⚠️ 警告：将删除 【所有记录】 且无法恢复！确定清空？')) {
             localStorage.removeItem(STORAGE_KEY);
             renderHomeList();
             showToast('🗑️ 已清空所有记录', 1500);
+            window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
         }
-    }
-    
-    // 辅助escape
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, c => c);
     }
     
     // 监听storage同步 (多标签页)
@@ -675,6 +697,12 @@
         });
     }
     
+    // 跳转到view.html (卡片墙 / 所有记录完整查看)
+    function navigateToViewPage() {
+        // 直接跳转到view.html，让用户查看所有记录的卡片墙
+        window.location.href = 'view.html';
+    }
+    
     // 初始化所有事件
     function initApp() {
         renderHomeList();
@@ -683,6 +711,10 @@
         // 新建按钮打开空模态
         const openBtn = document.getElementById('openModalBtn');
         if (openBtn) openBtn.addEventListener('click', () => openModal(null));
+        
+        // 查看全部卡片墙按钮
+        const viewAllLink = document.getElementById('viewAllLinkBtn');
+        if (viewAllLink) viewAllLink.addEventListener('click', navigateToViewPage);
         
         // 模态框关闭按钮
         const closeBtn = document.getElementById('closeModalBtn');
@@ -714,20 +746,19 @@
             if (e.target === detailElem) closeDetailModal();
         });
         
-        // 可选添加快捷键 Ctrl+N 新建记录
+        // 快捷键 Ctrl+N 新建记录
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
                 e.preventDefault();
                 openModal(null);
             }
-            // ESC关闭模态框
             if (e.key === 'Escape') {
                 closeModal();
                 closeDetailModal();
             }
         });
         
-        // 全局也提供一个清除所有功能 (但为了避免页面冗余，加一个隐藏的? 参考原delete.asp但保留温和，在控制台提供快捷？为了完整性，增加右下角悬浮清除？不，尊重设计: 但在主界面不需要清空全部按钮，但为了参考原系统可以提供一个管理方式: 用浏览器开发者工具手动，但是用户若有需求可以加；在统计栏附近增加一个“管理”下拉? 为了优雅，增加一个小工具在统计栏右侧
+        // 优雅地在统计栏添加一个清空全部按钮（小工具但保留可用性）
         const statsBar = document.querySelector('.stats-bar');
         if (statsBar && !document.getElementById('clearAllUtility')) {
             const clearBtnSpan = document.createElement('div');
