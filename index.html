@@ -3,16 +3,417 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>所有记录 · 灵境笔记墙</title>
-<link rel="stylesheet" href="style.css">
+    <title>灵境笔记墙 · 服务器TXT持久化存储</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Noto Sans', sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            padding: 2rem 1.5rem;
+            color: #0f172a;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 头部区域 */
+        .header {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .title-section h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #1e293b, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .title-section p {
+            color: #475569;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+
+        .stats-badge {
+            background: #eef2ff;
+            padding: 0.5rem 1.2rem;
+            border-radius: 60px;
+            font-weight: 500;
+            display: flex;
+            gap: 0.5rem;
+            align-items: baseline;
+            box-shadow: inset 0 0 0 1px rgba(59,130,246,0.2);
+        }
+
+        .count-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary {
+            background: #1e293b;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #0f172a;
+            transform: scale(0.97);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #3b82f6;
+        }
+
+        .btn-danger-light {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-danger-light:hover {
+            background: #fecaca;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f8fafc;
+            padding: 0.4rem 1rem;
+            border-radius: 60px;
+            border: 1px solid #e2e8f0;
+            flex: 1;
+            max-width: 360px;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .sort-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sort-btn.active {
+            background: #1e293b;
+            color: white;
+        }
+
+        /* 卡片网格 */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .record-card {
+            background: white;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.05);
+            transition: all 0.25s ease;
+            border: 1px solid #eef2ff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .record-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.12);
+            border-color: #cbd5e1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.2rem 0.4rem 1.2rem;
+            background: #fefefe;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .timestamp {
+            font-size: 0.7rem;
+            color: #475569;
+            font-family: monospace;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 30px;
+            transition: background 0.1s;
+        }
+
+        .icon-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .card-content {
+            padding: 1rem 1.2rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #1e293b;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .card-footer {
+            padding: 0.7rem 1.2rem;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #64748b;
+            background: #fafcff;
+        }
+
+        .copy-id {
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            font-weight: 500;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 2rem;
+            color: #475569;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.8rem;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 0.6rem 1.4rem;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e293b;
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.6rem;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .scroll-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 680px) {
+            body { padding: 1rem; }
+            .header { flex-direction: column; align-items: stretch; }
+            .actions { justify-content: flex-start; }
+        }
+
+        /* 新建浮动按钮优化 */
+        .floating-add {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 56px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            z-index: 99;
+        }
+        .floating-add:hover {
+            background: #1e40af;
+            transform: scale(0.96);
+        }
+        .modal-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal-mask.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-container {
+            background: white;
+            width: 90%;
+            max-width: 520px;
+            border-radius: 2rem;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+            padding: 1.8rem;
+        }
+        .modal-container h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .modal-container textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 180px;
+            font-family: inherit;
+            outline: none;
+        }
+        .modal-container textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
         <div class="title-section">
-            <h1>📖 灵境 · 卡片墙</h1>
-            <p>所有保存的文字｜流光卡片，一览无余</p>
+            <h1>📡 灵境 · 纯TXT服务器墙</h1>
+            <p>数据存储于服务器 data.json (纯文本TXT格式) · 跨设备同步 · 永久固态</p>
         </div>
         <div class="stats-badge">
             <span>📚 总计</span>
@@ -20,8 +421,8 @@
             <span>条灵思</span>
         </div>
         <div class="actions">
-            <button class="btn btn-primary" id="refreshViewBtn">🔄 刷新同步</button>
-            <button class="btn btn-outline" id="gotoIndexBtn">✍️ 新建记录</button>
+            <button class="btn btn-primary" id="refreshViewBtn">🔄 同步云端</button>
+            <button class="btn btn-outline" id="openModalBtn">✍️ 新建记录</button>
             <button class="btn btn-danger-light" id="clearAllFromViewBtn">🗑️ 清空全部</button>
         </div>
     </div>
@@ -37,92 +438,122 @@
         </div>
     </div>
 
-    <!-- 记录卡片网格 -->
     <div id="recordsContainer" class="records-grid">
-        <div class="empty-state">
-            <h3>✨ 暂未发现记录</h3>
-            <p>前往「灵境笔记」主页，写下第一条思绪吧~</p>
-            <button id="emptyStateCreateBtn" style="margin-top: 20px;" class="btn btn-primary">➕ 创建新记录</button>
+        <div class="empty-state">✨ 加载云端数据中...</div>
+    </div>
+    <footer>💡 所有笔记存储于服务器 data.json (纯文本json格式) · 卡片支持复制全文/ID · 数据永久保留</footer>
+</div>
+
+<!-- 新建记录弹窗 -->
+<div id="noteModal" class="modal-mask">
+    <div class="modal-container">
+        <h3>✨ 新建云端笔记</h3>
+        <textarea id="noteTextarea" placeholder="写下你的灵思、备忘录、想法……&#10;内容将永久保存在服务器的 data.json 文件中"></textarea>
+        <div class="modal-buttons">
+            <button class="btn btn-outline" id="cancelModalBtn">取消</button>
+            <button class="btn btn-primary" id="confirmSaveBtn">💾 保存到服务器</button>
         </div>
     </div>
-    <footer>
-        💡 数据存储于 localStorage · 与主页实时同步 · 点击卡片下方按钮复制全文/ID
-    </footer>
 </div>
+
 <div id="toastMsg" class="toast-msg"></div>
 <button class="scroll-top" id="scrollTopBtn" aria-label="返回顶部">↑</button>
+<button class="floating-add" id="fabAddBtn" aria-label="快速新建">+</button>
 
 <script>
-    // 存储KEY必须与 index.html 完全一致
-    const STORAGE_KEY = 'text_records_app';
+    // --------------------------------------------------------------
+    // 灵境笔记墙 · 纯服务器 TXT/JSON 持久化版本
+    // 核心功能：所有数据存储在服务器的 data.json 文件中（本质为txt格式）
+    // 前后端配合：GET data.json 读取，POST 通过 save.php (或save_record.php) 写入
+    // 完全符合静态网站 + 服务器txt存储
+    // --------------------------------------------------------------
     
-    // 当前排序与搜索状态
-    let currentSort = 'newest';     // 'newest' or 'oldest'
+    // 配置API端点 (与服务器实际路径保持一致)
+    const GET_DATA_URL = './data.json';          // 读取所有笔记的txt/json文件
+    const SAVE_DATA_URL = './save.php';          // 后端写入脚本（接收JSON并覆写data.json）
+    
+    let currentRecords = [];      // 内存中的记录列表
+    let currentSort = 'newest';
     let currentSearchTerm = '';
     
-    // ---------- 辅助函数 ----------
-    function showToast(message, duration = 2000) {
+    // 辅助函数: 吐司提示
+    function showToast(msg, dur = 1800) {
         const toast = document.getElementById('toastMsg');
         if (!toast) return;
-        toast.textContent = message;
+        toast.textContent = msg;
         toast.style.opacity = '1';
-        setTimeout(() => {
-            toast.style.opacity = '0';
-        }, duration);
+        setTimeout(() => toast.style.opacity = '0', dur);
     }
     
-    // 获取原始记录（不做任何过滤/排序）
-    function getRawRecords() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
+    // 从服务器加载记录 (读取 data.json)
+    async function loadRecordsFromServer() {
         try {
-            let records = JSON.parse(raw);
-            if (!Array.isArray(records)) return [];
-            // 基本数据有效性过滤
-            records = records.filter(r => r && typeof r.text === 'string' && r.id && r.timestamp);
-            return records;
-        } catch(e) {
-            console.warn(e);
+            const response = await fetch(GET_DATA_URL, { cache: 'no-store' });
+            if (!response.ok) {
+                if (response.status === 404) {
+                    console.warn('data.json 不存在，初始化空数组');
+                    return [];
+                }
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const text = await response.text();
+            if (!text.trim()) return [];
+            const data = JSON.parse(text);
+            if (Array.isArray(data)) return data.filter(r => r && typeof r.text === 'string' && r.id);
+            return [];
+        } catch (err) {
+            console.error('加载云端记录失败:', err);
+            showToast('⚠️ 无法连接服务器数据文件，请确保 data.json 可读且存在。', 2500);
             return [];
         }
     }
     
-    // 获取经过搜索和排序的记录（用于渲染）
-    function getFilteredAndSortedRecords() {
-        let records = getRawRecords();
-        // 1. 搜索过滤 (内容包含关键词)
-        if (currentSearchTerm.trim() !== '') {
-            const lowerSearch = currentSearchTerm.trim().toLowerCase();
-            records = records.filter(rec => rec.text.toLowerCase().includes(lowerSearch));
+    // 保存全部记录到服务器 (全量覆写 data.json 通过后端)
+    async function saveRecordsToServer(records) {
+        try {
+            const payload = JSON.stringify(records, null, 2);
+            const response = await fetch(SAVE_DATA_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload
+            });
+            if (!response.ok) {
+                let errMsg = `HTTP ${response.status}`;
+                try {
+                    const textErr = await response.text();
+                    if (textErr) errMsg = textErr;
+                } catch(e) {}
+                throw new Error(errMsg);
+            }
+            const result = await response.json();
+            if (result.success === true) {
+                showToast('💾 已持久化到服务器 data.json', 1200);
+                return true;
+            } else {
+                throw new Error(result.message || '未知保存错误');
+            }
+        } catch (err) {
+            console.error('保存到服务器失败:', err);
+            showToast(`❌ 保存失败: ${err.message}。请确保后端 save.php 配置正确，且 data.json 可写`, 3500);
+            return false;
         }
-        // 2. 排序
+    }
+    
+    // 过滤&排序
+    function getFilteredSorted() {
+        let records = [...currentRecords];
+        if (currentSearchTerm.trim() !== '') {
+            const lower = currentSearchTerm.trim().toLowerCase();
+            records = records.filter(rec => rec.text.toLowerCase().includes(lower));
+        }
         if (currentSort === 'newest') {
-            records.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            records.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
         } else {
-            records.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            records.sort((a,b) => (a.timestamp || 0) - (b.timestamp || 0));
         }
         return records;
     }
     
-    // 格式化时间：优先使用存储的 dateStr，否则根据时间戳生成友好时间
-    function formatDate(timestamp, dateStrFallback) {
-        if (dateStrFallback && typeof dateStrFallback === 'string' && dateStrFallback.trim() !== '') {
-            return dateStrFallback;
-        }
-        if (!timestamp) return '未知时间';
-        const date = new Date(timestamp);
-        // 避免无效时间
-        if (isNaN(date.getTime())) return '时间错';
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const seconds = date.getSeconds().toString().padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
-    
-    // 简易防XSS
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -130,251 +561,297 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, (c) => c);
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
     }
     
-    // 复制到剪贴板 (兼容)
-    function copyToClipboard(text, successMsg = '已复制') {
-        if (!text) return;
-        const finalText = typeof text === 'string' ? text : String(text);
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(finalText).then(() => {
-                showToast(`📋 ${successMsg}`, 1300);
-            }).catch(() => {
-                fallbackCopy(finalText, successMsg);
-            });
-        } else {
-            fallbackCopy(finalText, successMsg);
-        }
+    function formatDate(timestamp, dateStrFallback) {
+        if (dateStrFallback && typeof dateStrFallback === 'string' && dateStrFallback.trim()) return dateStrFallback;
+        if (!timestamp) return '未知时间';
+        const d = new Date(timestamp);
+        if (isNaN(d.getTime())) return '时间错误';
+        return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
     }
     
-    function fallbackCopy(text, successMsg) {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        showToast(`📋 ${successMsg}`, 1200);
-    }
-    
-    // 删除单条记录
-    function deleteRecordById(id) {
-        if (!id) return;
-        let records = getRawRecords();
-        const newRecords = records.filter(r => String(r.id) !== String(id));
-        if (newRecords.length === records.length) {
-            showToast('记录不存在或已被删除', 1000);
-            return;
-        }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords));
-        // 重新渲染视图
-        renderRecords();
-        // 触发全局存储事件，让同源页面（如index.html）同步
-        window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: JSON.stringify(newRecords) }));
-        showToast('✅ 已删除一条笔记', 1200);
-    }
-    
-    // 清空全部记录 (二次确认)
-    function clearAllRecords() {
-        if (confirm('⚠️ 永久删除所有笔记，此操作不可恢复！确定要清空全部记录吗？')) {
-            localStorage.removeItem(STORAGE_KEY);
-            renderRecords();
-            showToast('🗑️ 所有记录已清空', 1600);
-            window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY, newValue: null }));
-        }
-    }
-    
-    // 核心渲染：生成卡片墙
-    function renderRecords() {
+    // 渲染卡片
+    async function renderCards() {
         const container = document.getElementById('recordsContainer');
         const totalSpan = document.getElementById('totalCountDisplay');
         if (!container) return;
+        totalSpan.innerText = currentRecords.length;
+        const filtered = getFilteredSorted();
         
-        // 原始总数（未被搜索过滤）
-        const totalRawCount = getRawRecords().length;
-        if (totalSpan) totalSpan.innerText = totalRawCount;
-        
-        const records = getFilteredAndSortedRecords();
-        
-        // 空状态处理 (无匹配记录或完全无数据)
-        if (records.length === 0) {
+        if (filtered.length === 0) {
             let emptyHtml = `<div class="empty-state">
-                <div style="font-size: 3rem; margin-bottom: 12px;">📭</div>
-                <h3>✨ 暂无记录</h3>`;
+                <div style="font-size: 3rem;">📭</div>
+                <h3>✨ 暂无笔记</h3>`;
             if (currentSearchTerm.trim() !== '') {
-                emptyHtml += `<p>没有找到包含 “${escapeHtml(currentSearchTerm)}” 的笔记，试试其他关键词吧 🕊️</p>`;
+                emptyHtml += `<p>没有找到 “${escapeHtml(currentSearchTerm)}” 相关内容</p>`;
             } else {
-                emptyHtml += `<p>还没有任何文字记录，点击下方按钮或前往主页书写第一段灵感 ✍️</p>`;
+                emptyHtml += `<p>服务器 data.json 暂无记录，点击「新建记录」写下第一条云端笔记吧 ✨</p>`;
             }
-            emptyHtml += `<button id="emptyStateCreateBtn" style="margin-top: 22px;" class="btn btn-primary">➕ 创建新记录</button>
-                        </div>`;
+            emptyHtml += `<button id="emptyCreateBtn" class="btn btn-primary" style="margin-top: 20px;">➕ 创建新记录</button></div>`;
             container.innerHTML = emptyHtml;
-            const emptyBtn = document.getElementById('emptyStateCreateBtn');
-            if (emptyBtn) {
-                emptyBtn.addEventListener('click', () => {
-                    window.location.href = 'index.html';
-                });
-            }
+            const emptyBtn = document.getElementById('emptyCreateBtn');
+            if (emptyBtn) emptyBtn.onclick = () => openModal();
             return;
         }
         
-        // 生成卡片HTML
         let cardsHtml = '';
-        for (const record of records) {
-            const displayDate = formatDate(record.timestamp, record.dateStr);
-            const shortId = String(record.id).slice(-8);
-            const cardContentRaw = record.text || '';
-            // 避免过长卡片样式影响体验，保留完整文本，但使用 max-height 滚动
+        for (const rec of filtered) {
+            const dateShow = formatDate(rec.timestamp, rec.dateStr);
+            const shortId = String(rec.id).slice(-8);
             cardsHtml += `
-                <div class="record-card" data-record-id="${record.id}">
+                <div class="record-card" data-id="${rec.id}">
                     <div class="card-header">
-                        <div class="timestamp">📅 ${escapeHtml(displayDate)}</div>
+                        <div class="timestamp">📅 ${escapeHtml(dateShow)}</div>
                         <div class="card-actions">
-                            <button class="icon-btn copy-id-btn" title="复制卡片ID" data-id="${record.id}" data-type="id">🔗</button>
-                            <button class="icon-btn delete-btn" title="删除这条笔记" data-id="${record.id}">🗑️</button>
+                            <button class="icon-btn copy-id-btn" data-id="${rec.id}" title="复制ID">🔗</button>
+                            <button class="icon-btn delete-btn" data-id="${rec.id}" title="删除笔记">🗑️</button>
                         </div>
                     </div>
-                    <div class="card-content">${escapeHtml(cardContentRaw)}</div>
+                    <div class="card-content">${escapeHtml(rec.text)}</div>
                     <div class="card-footer">
                         <span>🆔 #${escapeHtml(shortId)}</span>
-                        <span class="copy-id" data-id="${record.id}" data-type="fulltext" style="cursor:pointer;">📋 复制全文</span>
+                        <span class="copy-fulltext" data-id="${rec.id}" style="cursor:pointer;">📋 复制全文</span>
                     </div>
                 </div>
             `;
         }
         container.innerHTML = cardsHtml;
         
-        // ----- 绑定所有卡片内按钮事件 (使用事件委托也可，但直接绑更清晰) -----
-        // 删除按钮
+        // 删除事件
         document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const id = btn.getAttribute('data-id');
-                if (id && confirm('确定删除这条记录吗？')) {
-                    deleteRecordById(id);
-                } else if (id) {
-                    // 用户取消，不做操作
+                if (!id) return;
+                if (!confirm('删除这条笔记？服务器 data.json 将同步更新，不可撤销。')) return;
+                const newRecords = currentRecords.filter(r => String(r.id) !== String(id));
+                if (newRecords.length === currentRecords.length) return;
+                const success = await saveRecordsToServer(newRecords);
+                if (success) {
+                    currentRecords = newRecords;
+                    await renderCards();
+                    showToast('🗑️ 已删除，服务器文件同步', 1200);
+                } else {
+                    showToast('删除失败，请检查后端保存接口', 2000);
                 }
             });
         });
         
-        // 复制ID按钮
+        // 复制ID
         document.querySelectorAll('.copy-id-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = btn.getAttribute('data-id');
-                if (id) {
-                    copyToClipboard(id, '记录ID已复制');
-                }
+                if (id) copyToClipboard(id, 'ID已复制');
             });
         });
         
-        // 复制全文 (卡片底部)
-        document.querySelectorAll('.copy-id').forEach(el => {
+        // 复制全文
+        document.querySelectorAll('.copy-fulltext').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = el.getAttribute('data-id');
-                if (id) {
-                    const record = getRawRecords().find(r => String(r.id) === String(id));
-                    if (record && record.text) {
-                        copyToClipboard(record.text, '全文已复制到剪贴板');
-                    } else {
-                        showToast('未找到文本内容', 1000);
-                    }
-                }
+                const record = currentRecords.find(r => String(r.id) === String(id));
+                if (record && record.text) copyToClipboard(record.text, '全文已复制');
+                else showToast('未找到内容', 800);
             });
         });
     }
     
-    // 刷新视图 (强制重新拉取数据)
-    function refreshView() {
-        renderRecords();
-        showToast('🔄 已同步最新笔记', 1100);
+    function copyToClipboard(text, msg) {
+        if (!text) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => showToast(`📋 ${msg}`, 1200));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast(`📋 ${msg}`, 1200);
+        }
     }
     
-    // 跨标签页同步: 监听storage事件，确保index.html或本页面其他标签修改后自动刷新
-    function bindCrossTabSync() {
-        window.addEventListener('storage', (e) => {
-            if (e.key === STORAGE_KEY) {
-                // 数据变化，重新渲染
-                renderRecords();
-                showToast('📡 检测到内容更新，已自动刷新', 1300);
+    // 刷新云端并重绘
+    async function refreshFromServer() {
+        showToast('🔄 正在从服务器 data.json 同步...', 1000);
+        const records = await loadRecordsFromServer();
+        currentRecords = records;
+        await renderCards();
+        showToast(`📡 已同步 ${currentRecords.length} 条笔记`, 1300);
+    }
+    
+    // 清空全部（调用保存空数组）
+    async function handleClearAll() {
+        if (!confirm('⚠️ 永久删除服务器 data.json 中的所有笔记！不可恢复，确定清空全部？')) return;
+        const success = await saveRecordsToServer([]);
+        if (success) {
+            currentRecords = [];
+            await renderCards();
+            showToast('🗑️ 所有记录已清空，服务器文件已重置', 1800);
+        } else {
+            showToast('清空失败，后端接口未响应或权限不足', 2000);
+        }
+    }
+    
+    // 新建笔记逻辑：向服务器添加一条新记录 (追加方式)
+    async function addNewNoteToServer(noteText) {
+        if (!noteText || noteText.trim() === '') {
+            showToast('📝 内容不能为空', 1200);
+            return false;
+        }
+        const newId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+        const newRecord = {
+            id: newId,
+            text: noteText.trim(),
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleString('zh-CN')
+        };
+        const updatedRecords = [newRecord, ...currentRecords];
+        const success = await saveRecordsToServer(updatedRecords);
+        if (success) {
+            currentRecords = updatedRecords;
+            await renderCards();
+            showToast('✨ 新笔记已永久存入服务器', 1400);
+            return true;
+        } else {
+            showToast('保存失败，请检查后端 save.php', 2000);
+            return false;
+        }
+    }
+    
+    // 弹窗控制
+    const modal = document.getElementById('noteModal');
+    const noteTextarea = document.getElementById('noteTextarea');
+    
+    function openModal() {
+        if (modal) {
+            noteTextarea.value = '';
+            modal.classList.add('active');
+            noteTextarea.focus();
+        }
+    }
+    
+    function closeModal() {
+        if (modal) modal.classList.remove('active');
+    }
+    
+    async function handleSaveFromModal() {
+        const content = noteTextarea.value;
+        if (!content.trim()) {
+            showToast('请填写笔记内容', 1000);
+            return;
+        }
+        closeModal();
+        await addNewNoteToServer(content);
+    }
+    
+    // 跨标签/页面同步 (焦点/可见)
+    function bindVisibilitySync() {
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshFromServer();
             }
+        });
+        window.addEventListener('focus', () => {
+            refreshFromServer();
         });
     }
     
-    // 初始化页面及交互
-    function initViewPage() {
-        // 首次渲染
-        renderRecords();
-        bindCrossTabSync();
+    // 初始化页面
+    async function init() {
+        await refreshFromServer();
         
-        // 搜索框
+        // 搜索
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 currentSearchTerm = e.target.value;
-                renderRecords();
+                renderCards();
             });
         }
-        
         // 排序按钮
         const sortBtns = document.querySelectorAll('.sort-btn');
         sortBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
                 const sortVal = btn.getAttribute('data-sort');
-                if (sortVal === 'newest') {
-                    currentSort = 'newest';
-                } else if (sortVal === 'oldest') {
-                    currentSort = 'oldest';
-                }
-                // 更新按钮激活样式
+                currentSort = sortVal === 'newest' ? 'newest' : 'oldest';
                 sortBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                renderRecords();
+                renderCards();
             });
         });
-        
-        // 刷新按钮
-        const refreshBtn = document.getElementById('refreshViewBtn');
-        if (refreshBtn) refreshBtn.addEventListener('click', refreshView);
-        
-        // 跳转到主页（新建记录）
-        const gotoIndexBtn = document.getElementById('gotoIndexBtn');
-        if (gotoIndexBtn) gotoIndexBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
+        // 刷新
+        document.getElementById('refreshViewBtn')?.addEventListener('click', refreshFromServer);
+        // 新建按钮（头部 + 浮动按钮 + 弹窗空白按钮）
+        const openModalBtn = document.getElementById('openModalBtn');
+        const fabBtn = document.getElementById('fabAddBtn');
+        if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+        if (fabBtn) fabBtn.addEventListener('click', openModal);
+        // 清空
+        document.getElementById('clearAllFromViewBtn')?.addEventListener('click', handleClearAll);
+        // 弹窗事件
+        const cancelBtn = document.getElementById('cancelModalBtn');
+        const confirmBtn = document.getElementById('confirmSaveBtn');
+        if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+        if (confirmBtn) confirmBtn.addEventListener('click', handleSaveFromModal);
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
         });
         
-        // 清空全部按钮
-        const clearAllBtn = document.getElementById('clearAllFromViewBtn');
-        if (clearAllBtn) clearAllBtn.addEventListener('click', clearAllRecords);
-        
-        // 返回顶部逻辑 (优雅小功能)
-        const scrollTopBtn = document.getElementById('scrollTopBtn');
-        if (scrollTopBtn) {
+        // 返回顶部
+        const scrollBtn = document.getElementById('scrollTopBtn');
+        if (scrollBtn) {
             window.addEventListener('scroll', () => {
-                if (window.scrollY > 300) {
-                    scrollTopBtn.classList.add('show');
-                } else {
-                    scrollTopBtn.classList.remove('show');
-                }
+                if (window.scrollY > 300) scrollBtn.classList.add('show');
+                else scrollBtn.classList.remove('show');
             });
-            scrollTopBtn.addEventListener('click', () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
+            scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
         }
         
-        // 若当前空状态里的创建按钮将来可能被动态重新生成，已经在render里处理，但额外监听一下以防全局备用
-        // 无需额外操作
+        bindVisibilitySync();
+        
+        // 友好提示: 提供PHP后端代码参考（控制台输出）
+        console.log('%c✨ 灵境笔记墙 · 纯服务器TXT存储模式 (data.json)', 'color:#2563eb;font-size:14px');
+        console.log('请确保服务器存在 save.php 支持POST覆写 data.json。示例代码已在下方说明，可复制部署。');
     }
     
-    // 启动
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initViewPage);
-    } else {
-        initViewPage();
-    }
+    init();
 </script>
+
+<!-- 
+========= 必须部署后端 save.php 实现数据持久化 =========
+请在同目录下创建 save.php 文件，内容如下（PHP环境）：
+-------------------------------------------------------
+<?php
+header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+$file = 'data.json';
+$input = file_get_contents('php://input');
+if ($input === false) {
+    echo json_encode(['success' => false, 'message' => '读取输入失败']);
+    exit;
+}
+// 验证数据格式 (确保数据为合法数组或空数组)
+$decoded = json_decode($input, true);
+if ($decoded === null && $input !== '') {
+    echo json_encode(['success' => false, 'message' => '无效JSON格式']);
+    exit;
+}
+if (file_put_contents($file, $input, LOCK_EX)) {
+    echo json_encode(['success' => true, 'message' => '保存成功']);
+} else {
+    echo json_encode(['success' => false, 'message' => '写入失败，请检查 data.json 目录权限']);
+}
+?>
+-------------------------------------------------------
+同时确保 data.json 文件存在（可创建一个空文件，内容为 []），且具有可写权限。
+如使用Nginx/Apache，确保目录权限正确。这样所有笔记永久存储于服务器的 data.json（txt文本格式）。
+-->
 </body>
 </html>
