@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>   < !DOCTYPE html>   < !DOCTYPE html>   < !DOCTYPE html>   超文本标记语言
+<   超文本标记语言html lang   朗   朗   超文本标记语言="zh"   "zh"   "zh"   "zh">   <   朗 css长= " zh"   " zh"   " zh" >
+<head   头   头>   " zh"   " zh"      " zh"< head   头>   头
+<   元meta    字符集charset="UTF-8"   "UTF-8"   "UTF-8"   "UTF-8" />   <   元meta    字符集charset="UTF-8"   "UTF-8"   "UTF-8"   "UTF-8" />
+<title   标题   标题>留言目录</   & lt;title   标题>   & lt;
+<style   风格   风格>   < style   风格   风格>
+  body   身体   身体 {   身体{
+    font-family   字体类型   字体类型   字体类型: sans-serif;      家庭字体类型   字体:无衬线   没有;   衬线
+    max-width: 600px   600便士   600便士;
+    margin   保证金   保证金   保证金   保证金: 2rem   快速眼动   快速眼动    马克斯auto   汽车;   Margin   保证金   保证金   保证金   保证金: 2rem   快速眼动 auto；   汽车;   汽车;   汽车;   汽车;   汽车;   汽车   汽车
+    padding   填充   填充   填充   填充: 0 1rem   快速眼动   快速眼动;   填充：0 1rem；   眼动;
+  }   /比;   /比;
+  .catalog-item {
+    border   边境   边境: 1px solid   固体   固体 #eee;
+    padding   填充   填充: 0.8rem   快速眼动   快速眼动;   填充:0.8快速眼动;
+    margin-bottom: 0.5rem   快速眼动;
+    border-radius   这个特性   快速眼动: 6px   这个特性;
+    cursor   光标   光标: pointer   指针;
+    transition   过渡: background   背景   背景 0.2s   年代;
+  }
+  .catalog-item:hover   徘徊 {
+    background   背景   背景: #f5f5f5;
+  }
+  .name   名字 {
+    font-weight   粗细   粗细: bold   大胆的   大胆的;   粗细:大胆的;
+    margin-bottom: 0.3rem   快速眼动   快速眼动   快速眼动;
+  }
+  .time   时间 {
+    font-size   字体大小   字体大小: 0.8rem   快速眼动   快速眼动;
+    color   颜色   颜色: #888;
+  }
+  button   按钮 {
+    padding   填充   填充: 0.8rem   快速眼动   快速眼动;   填充:0.8快速眼动;
+    background   背景   背景: #0070f3;
+    color   颜色   颜色: white   白色;
+    border   边境   边境: none   无;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 1rem;
+  }
+  button:hover {
+    background: #005bb5;
+  }
+</style>
+</head>
+<body>
+<h1>留言目录</h1>
+<p>点击任意留言查看详细内容</p>
+
+<div id="catalog"></div>
+
+<button onclick="location.href='post.html'">+ 发表新留言</button>
+
+<script>
+  const SUPABASE_URL = "https://tchjirsxgoixavmwqjzj.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_WBeruDi1g2uFhM--n0dmUg_f_HXztPe";
+  const TABLE = "myboxs";
+
+  function fmtTime(str) {
+    const d = new Date(str);
+    return d.toLocaleString();
+  }
+
+  async function loadCatalog() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?order=created_at.desc`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await res.json();
+
+    const catalogEl = document.getElementById("catalog");
+    catalogEl.innerHTML = "";
+
+    if (data.length === 0) {
+      catalogEl.innerHTML = "<p>暂无留言，点击上方按钮发表第一条留言吧！</p>";
+      return;
+    }
+
+    data.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "catalog-item";
+      div.onclick = () => {
+        window.location.href = `detail.html?id=${item.id}`;
+      };
+      div.innerHTML = `
+        <div class="name">${escapeHtml(item.name)}</div>
+        <div class="time">${fmtTime(item.created_at)}</div>
+      `;
+      catalogEl.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === "&") return "&amp;";
+      if (m === "<") return "&lt;";
+      if (m === ">") return "&gt;";
+      return m;
+    });
+  }
+
+  loadCatalog();
+</script>
+</body>
+</html>
