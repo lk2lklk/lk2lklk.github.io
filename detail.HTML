@@ -1,0 +1,293 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>留言详情</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Microsoft Yahei", sans-serif;
+    }
+    body {
+        background-color: #f5f5f5;
+        padding: 40px;
+    }
+    .container {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 30px;
+        max-width: 1050px;
+        margin: 0 auto;
+    }
+    /* 顶部按钮栏 */
+    .btn-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+    button {
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        font-size: 14px;
+        padding: 10px 16px;
+        cursor: pointer;
+    }
+    .back-btn {
+        background-color: #2989e8;
+    }
+    .edit-btn {
+        background-color: #ff9900;
+    }
+    .del-btn {
+        background-color: #f53f3f;
+    }
+    .save-btn {
+        background-color: #28a745;
+    }
+    .cancel-btn {
+        background-color: #6c757d;
+    }
+    .right-btn-group {
+        display: flex;
+        gap:12px;
+    }
+    /* 标题 */
+    .title-main {
+        font-size: 32px;
+        font-weight: bold;
+        color: #222;
+        padding-bottom:10px;
+        border-bottom: 3px solid #4096ff;
+        margin-bottom:30px;
+    }
+    /* 时间样式 */
+    .time {
+        font-size: 14px;
+        color: #888;
+        margin-bottom: 18px;
+    }
+    /* 正文内容 */
+    .content-text {
+        font-size:16px;
+        line-height:2.2;
+        color:#333;
+        margin-bottom:12px;
+        white-space: pre-wrap;
+        background: #fafafa;
+        padding: 20px;
+        border-radius: 6px;
+        border: 1px solid #eee;
+    }
+    /* 编辑表单样式 */
+    .edit-form input,
+    .edit-form textarea {
+        width: 100%;
+        padding: 12px;
+        font-size: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-family: "Microsoft Yahei", sans-serif;
+    }
+    .edit-form textarea {
+        min-height: 200px;
+        line-height: 1.8;
+    }
+    .error {
+        color: red;
+        font-size: 20px;
+        text-align: center;
+        padding: 2rem;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部按钮 -->
+        <div class="btn-bar">
+            <button class="back-btn" onclick="window.location.href='index.html'">← 返回目录</button>
+            <div class="right-btn-group" id="normalBtns">
+                <button class="edit-btn" onclick="showEditForm()">✏️ 编辑</button>
+                <button class="del-btn" onclick="deleteMessage()">🗑️ 删除</button>
+            </div>
+            <div class="right-btn-group" id="editBtns" style="display: none;">
+                <button class="save-btn" onclick="saveEdit()">💾 保存修改</button>
+                <button class="cancel-btn" onclick="cancelEdit()">❌ 取消</button>
+            </div>
+        </div>
+
+        <!-- 主标题 -->
+        <div class="title-main" id="titleArea">加载中...</div>
+
+        <!-- 时间 -->
+        <div class="time" id="timeArea"></div>
+
+        <!-- 详情正文 / 编辑表单 -->
+        <div id="detailArea">
+            <div class="content-text" id="contentArea"></div>
+        </div>
+    </div>
+
+<script>
+  const SUPABASE_URL = "https://tchjirsxgoixavmwqjzj.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_WBeruDi1g2uFhM--n0dmUg_f_HXztPe";
+  const TABLE = "myboxs";
+
+  let currentItem = null; // 保存当前留言数据
+
+  // 格式化时间
+  function fmtTime(str) {
+    if (!str) return "未知时间";
+    const d = new Date(str);
+    return d.toLocaleString();
+  }
+
+  // HTML转义
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === "&") return "&amp;";
+      if (m === "<") return "&lt;";
+      if (m === ">") return "&gt;";
+      return m;
+    });
+  }
+
+  // 删除留言
+  async function deleteMessage() {
+    if (!currentItem || !confirm('确定要删除这条留言吗？此操作不可恢复！')) return;
+    const id = currentItem.id;
+    
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`, {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (res.ok) {
+        alert('删除成功！');
+        window.location.href = "index.html";
+      } else {
+        const error = await res.text();
+        alert('删除失败：' + error);
+      }
+    } catch (err) {
+      alert('删除失败，请检查网络');
+    }
+  }
+
+  // 显示编辑界面
+  function showEditForm() {
+    if (!currentItem) return;
+    // 切换按钮
+    document.getElementById('normalBtns').style.display = 'none';
+    document.getElementById('editBtns').style.display = 'flex';
+
+    // 渲染编辑表单
+    document.getElementById('detailArea').innerHTML = `
+      <div class="edit-form">
+          <input type="text" id="editName" value="${escapeHtml(currentItem.name)}">
+          <textarea id="editContent">${escapeHtml(currentItem.content)}</textarea>
+      </div>
+    `;
+  }
+
+  // 保存编辑
+  async function saveEdit() {
+    if (!currentItem) return;
+    const id = currentItem.id;
+    const newName = document.getElementById("editName").value.trim();
+    const newContent = document.getElementById("editContent").value.trim();
+    
+    if (!newName) {
+      alert('标题不能为空');
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`, {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          name: newName, 
+          content: newContent || "无留言内容" 
+        })
+      });
+      
+      if (res.ok) {
+        alert('修改成功！');
+        loadDetail(); // 重新加载
+      } else {
+        alert('修改失败');
+      }
+    } catch (err) {
+      alert('修改失败，请检查网络');
+    }
+  }
+
+  // 取消编辑
+  function cancelEdit() {
+    document.getElementById('normalBtns').style.display = 'flex';
+    document.getElementById('editBtns').style.display = 'none';
+    displayDetail();
+  }
+
+  // 显示详情
+  function displayDetail() {
+    if (!currentItem) return;
+    document.getElementById('titleArea').textContent = currentItem.name;
+    document.getElementById('timeArea').textContent = fmtTime(currentItem.created_at);
+    document.getElementById('detailArea').innerHTML = `<div class="content-text" id="contentArea">${escapeHtml(currentItem.content)}</div>`;
+  }
+
+  // 加载详情
+  async function loadDetail() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+
+    if (!id) {
+      document.getElementById("titleArea").innerHTML = '<div class="error">❌ 未指定留言ID</div>';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`, {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        }
+      });
+      
+      if (!res.ok) throw new Error("请求失败");
+      
+      const data = await res.json();
+      if (!data || data.length === 0) {
+        document.getElementById("titleArea").innerHTML = '<div class="error">❌ 留言不存在或已被删除</div>';
+        return;
+      }
+
+      currentItem = data[0];
+      displayDetail();
+      
+    } catch (err) {
+      document.getElementById("titleArea").innerHTML = `<div class="error">❌ 加载失败</div>`;
+    }
+  }
+
+  // 初始化
+  loadDetail();
+</script>
+</body>
+</html>
