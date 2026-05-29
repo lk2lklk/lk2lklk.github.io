@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<title>留言目录</title>
+<style>
+  body {
+    font-family: sans-serif;
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .catalog-item {
+    border: 1px solid #eee;
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .catalog-item:hover {
+    background: #f5f5f5;
+  }
+  .name {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  .time {
+    font-size: 0.8rem;
+    color: #888;
+  }
+  button {
+    padding: 0.8rem;
+    background: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 1rem;
+  }
+  button:hover {
+    background: #005bb5;
+  }
+</style>
+</head>
+<body>
+<h1>留言目录</h1>
+<p>点击任意留言查看详细内容</p>
+
+<div id="catalog"></div>
+
+<button onclick="location.href='post.html'">+ 发表新留言</button>
+
+<script>
+  const SUPABASE_URL = "https://tchjirsxgoixavmwqjzj.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_WBeruDi1g2uFhM--n0dmUg_f_HXztPe";
+  const TABLE = "myboxs";
+
+  function fmtTime(str) {
+    const d = new Date(str);
+    return d.toLocaleString();
+  }
+
+  async function loadCatalog() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?order=created_at.desc`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await res.json();
+
+    const catalogEl = document.getElementById("catalog");
+    catalogEl.innerHTML = "";
+
+    if (data.length === 0) {
+      catalogEl.innerHTML = "<p>暂无留言，点击上方按钮发表第一条留言吧！</p>";
+      return;
+    }
+
+    data.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "catalog-item";
+      div.onclick = () => {
+        window.location.href = `detail.html?id=${item.id}`;
+      };
+      div.innerHTML = `
+        <div class="name">${escapeHtml(item.name)}</div>
+        <div class="time">${fmtTime(item.created_at)}</div>
+      `;
+      catalogEl.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === "&") return "&amp;";
+      if (m === "<") return "&lt;";
+      if (m === ">") return "&gt;";
+      return m;
+    });
+  }
+
+  loadCatalog();
+</script>
+</body>
+</html>
